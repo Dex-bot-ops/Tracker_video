@@ -43,3 +43,4 @@ python/
 get-pip.py
 backend/models/
 backend/static/
+backend/uploads/

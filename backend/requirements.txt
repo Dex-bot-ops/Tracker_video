@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+opencv-python-headless
+websockets
+python-multipart
+ultralytics
+pydantic
+pydantic-settings

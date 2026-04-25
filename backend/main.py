@@ -69,14 +69,24 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.post("/shutdown")
 async def shutdown():
     """
-    Route pour éteindre le serveur proprement.
+    Route pour éteindre le serveur complètement.
+    Arrête également le serveur frontend (Vite, port 5173) si actif.
     """
     import signal
     import os
+    import psutil
 
-    # Kill the current process
+    # Tuer tous les processus sur le port 5173 (Vite dev server)
+    for conn in psutil.net_connections(kind="inet"):
+        if conn.laddr.port == 5173 and conn.pid:
+            try:
+                psutil.Process(conn.pid).terminate()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+
+    # Tuer le processus backend (Uvicorn)
     os.kill(os.getpid(), signal.SIGTERM)
-    return {"status": "success", "message": "Server shutting down"}
+    return {"status": "success", "message": "Application arrêtée"}
 
 
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")

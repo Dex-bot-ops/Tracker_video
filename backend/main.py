@@ -70,23 +70,53 @@ async def websocket_endpoint(websocket: WebSocket):
 async def shutdown():
     """
     Route pour éteindre le serveur complètement.
-    Arrête également le serveur frontend (Vite, port 5173) si actif.
+    Ferme également les fenêtres de terminal (cmd, powershell) associées.
     """
-    import signal
     import os
     import psutil
+    import subprocess
 
-    # Tuer tous les processus sur le port 5173 (Vite dev server)
+    def kill_tree_and_terminal(pid):
+        try:
+            proc = psutil.Process(pid)
+            target_pid = pid
+
+            # Remonter pour trouver le terminal parent (sans tuer VSCode/WindowsTerminal)
+            parent = proc.parent()
+            while parent:
+                name = parent.name().lower()
+                if name in [
+                    "cmd.exe",
+                    "powershell.exe",
+                    "pwsh.exe",
+                    "npm.cmd",
+                    "npm.exe",
+                ]:
+                    target_pid = parent.pid
+                    if name in ["cmd.exe", "powershell.exe", "pwsh.exe"]:
+                        break  # C'est le terminal final
+                parent = parent.parent()
+
+            # Lancer taskkill en tâche de fond (délai de 1s pour laisser la réponse HTTP partir)
+            if os.name == "nt":
+                cmd = f"ping 127.0.0.1 -n 2 > nul & taskkill /F /T /PID {target_pid}"
+                # CREATE_NO_WINDOW = 0x08000000
+                subprocess.Popen(["cmd.exe", "/c", cmd], creationflags=0x08000000)
+            else:
+                proc.terminate()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+
+    # 1. Tuer Vite (port 5173) et son terminal
     for conn in psutil.net_connections(kind="inet"):
         if conn.laddr.port == 5173 and conn.pid:
-            try:
-                psutil.Process(conn.pid).terminate()
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                pass
+            kill_tree_and_terminal(conn.pid)
+            break
 
-    # Tuer le processus backend (Uvicorn)
-    os.kill(os.getpid(), signal.SIGTERM)
-    return {"status": "success", "message": "Application arrêtée"}
+    # 2. Tuer le Backend et son terminal
+    kill_tree_and_terminal(os.getpid())
+
+    return {"status": "success", "message": "Fermeture des terminaux en cours..."}
 
 
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")

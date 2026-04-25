@@ -66,6 +66,19 @@ async def websocket_endpoint(websocket: WebSocket):
     await streamer.handle_connection(websocket)
 
 
+@app.post("/shutdown")
+async def shutdown():
+    """
+    Route pour éteindre le serveur proprement.
+    """
+    import signal
+    import os
+
+    # Kill the current process
+    os.kill(os.getpid(), signal.SIGTERM)
+    return {"status": "success", "message": "Server shutting down"}
+
+
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 if os.path.exists(static_dir):
     app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

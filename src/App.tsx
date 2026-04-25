@@ -89,8 +89,51 @@ function App() {
       >
         {/* COLONNE GAUCHE */}
         <div className="sidebar">
-          <div className="panel panel-purple">
+          <div
+            className="panel panel-purple"
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
             <h2 style={{ margin: 0 }}>Nom app</h2>
+            <button
+              onClick={() => {
+                if (window.confirm("Voulez-vous vraiment éteindre l'application ?")) {
+                  fetch(`http://${window.location.host}/shutdown`, { method: 'POST' })
+                    .then(() => {
+                      document.body.innerHTML =
+                        '<h1 style="color: white; text-align: center; margin-top: 20%;">L\'application est arrêtée. Vous pouvez fermer cette fenêtre.</h1>';
+                    })
+                    .catch((err) => console.error("Erreur lors de l'arrêt:", err));
+                }
+              }}
+              style={{
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+              title="Éteindre l'application"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                <line x1="12" y1="2" x2="12" y2="12"></line>
+              </svg>
+              Éteindre
+            </button>
           </div>
 
           <Dashboard
